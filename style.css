@@ -68,6 +68,7 @@ main, .top, footer { max-width: 980px; margin: 0 auto; padding: 0 16px; }
 }
 h1 { font-size: 1.5rem; margin: 0; }
 h2 { font-size: 1.1rem; margin: 0 0 8px; }
+h2 button { margin-left: 8px; vertical-align: middle; font-weight: 500; }
 
 .mode {
   display: flex; align-items: center; gap: 8px;

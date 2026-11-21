@@ -455,13 +455,52 @@ function fromBase64Url(s) {
   return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
 }
 
+/** Copy text; falls back to execCommand where the Clipboard API is unavailable (e.g. file://). */
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { /* ignore */ }
+    ta.remove();
+    return ok;
+  }
+}
+
 $('share').addEventListener('click', async () => {
   const url = `${location.origin}${location.pathname}#data=${toBase64Url(JSON.stringify(exportData()))}`;
-  try {
-    await navigator.clipboard.writeText(url);
-    setStatus('Link copied. Open it on another device to load this list.');
-  } catch {
-    prompt('Copy this link:', url);
+  if (await copyText(url)) setStatus('Link copied. Open it on another device to load this list.');
+  else prompt('Copy this link:', url);
+});
+
+/** Plain-text list of everyone's local time, for pasting into a chat or email. */
+function timesText() {
+  const t = now();
+  const line = (p) => {
+    const where = p.place || zoneLabel(p.tz) || formatOffset(offsetMinutes(t, p.tz));
+    return `• ${p.name} (${where}): ${fmtTime(t, p.tz)}, ${fmtDate(t, p.tz)}`;
+  };
+  const head = ref == null ? 'Current time for everyone:' : 'Lesson time for everyone:';
+  return [head, line(state.me), ...sortedPeople(t).map(line)].join('\n');
+}
+
+let copyTimer = 0;
+$('copy-times').addEventListener('click', async () => {
+  const text = timesText();
+  const btn = $('copy-times');
+  if (await copyText(text)) {
+    btn.textContent = '✓ Copied';
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { btn.textContent = '📋 Copy times'; }, 2000);
+  } else {
+    alert(text);
   }
 });
 
