@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson Time Planner</title>
+  <meta name="description" content="See the local time of all your students at once, and plan lessons across time zones.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕰️</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Apply the saved theme before the page paints, so it doesn't flash.
+    try { const t = localStorage.getItem('lesson-time-planner.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+  </script>
+</head>
+<body>
+  <header class="top">
+    <h1>🕰️ Lesson Time Planner</h1>
+    <div class="top-right">
+      <div class="mode" id="mode"></div>
+      <button type="button" id="theme" title="Switch light/dark theme"></button>
+    </div>
+  </header>
+
+  <main>
+    <section aria-labelledby="people-h">
+      <div class="section-head">
+        <h2 id="people-h">People</h2>
+        <p class="hint">Change the date or time on <strong>any</strong> row, and everyone else's time updates to match.</p>
+      </div>
+      <ul class="people" id="people"></ul>
+    </section>
+
+    <section aria-labelledby="grid-h" class="card">
+      <div class="section-head">
+        <h2 id="grid-h">Day planner</h2>
+        <div class="day-nav">
+          <button type="button" class="secondary" id="prev-day" aria-label="Previous day">◀</button>
+          <span id="grid-date"></span>
+          <button type="button" class="secondary" id="next-day" aria-label="Next day">▶</button>
+        </div>
+      </div>
+      <p class="hint">Each column is one hour of <strong>your</strong> day. Click a column to pick that time.
+        <span class="legend"><i class="night"></i>night <i class="morning"></i>morning <i class="day"></i>day <i class="evening"></i>evening</span></p>
+      <div class="grid-wrap"><table class="grid" id="grid"></table></div>
+    </section>
+
+    <section aria-labelledby="add-h" class="card add">
+      <h2 id="add-h">Add a student</h2>
+      <form id="person-form" autocomplete="off">
+        <input type="hidden" id="edit-id">
+        <label>Name
+          <input id="name" required maxlength="60" placeholder="e.g. Yuki">
+        </label>
+        <label class="place">City, country or time zone
+          <input id="place" required placeholder="e.g. Osaka, São Paulo, Europe/Berlin, UTC+3" aria-autocomplete="list" aria-controls="suggestions">
+          <ul class="suggestions" id="suggestions" role="listbox" hidden></ul>
+        </label>
+        <div class="chosen" id="chosen"></div>
+        <div class="form-actions">
+          <button type="submit" id="submit">Add</button>
+          <button type="button" id="cancel-edit" class="secondary" hidden>Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card settings" aria-labelledby="settings-h">
+      <h2 id="settings-h">Settings &amp; backup</h2>
+      <label class="inline"><input type="checkbox" id="hour12"> Use 12-hour clock (AM/PM)</label>
+      <div class="buttons">
+        <button type="button" class="secondary" id="share">Copy share link</button>
+        <button type="button" class="secondary" id="export">Download backup</button>
+        <label class="button secondary">Restore backup<input type="file" id="import" accept="application/json,.json" hidden></label>
+      </div>
+      <p class="hint">Your list is saved only in this browser. Use a share link or backup file to move it to another device.</p>
+      <p class="status" id="status" role="status"></p>
+    </section>
+  </main>
+
+  <footer>
+    Place search uses the free <a href="https://open-meteo.com/en/docs/geocoding-api">Open-Meteo geocoding API</a>. Nothing else leaves your browser.
+  </footer>
+
+  <script src="tz.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

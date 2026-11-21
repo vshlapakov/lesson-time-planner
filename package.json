@@ -1,0 +1,5 @@
+{
+  "name": "lesson-time-planner",
+  "private": true,
+  "scripts": { "test": "node --test" }
+}
