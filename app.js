@@ -139,6 +139,7 @@ function personRow(p, t, meParts) {
         <input type="datetime-local" value="${toLocalInputValue(parts)}" data-tz="${esc(p.tz)}">
       </label>
       <div class="actions">
+        ${isMe ? '' : `<button type="button" class="small secondary" data-action="copy" title="Copy ${esc(p.name)}'s time and yours, to paste into a message" aria-label="Copy times for ${esc(p.name)}">📋 Copy</button>`}
         <button type="button" class="small secondary" data-action="edit" aria-label="Edit ${esc(p.name)}">Edit</button>
         ${isMe ? '' : `<button type="button" class="small secondary danger" data-action="remove" aria-label="Remove ${esc(p.name)}">Remove</button>`}
       </div>
@@ -227,7 +228,9 @@ $('people').addEventListener('click', (e) => {
   const id = btn.closest('.person').dataset.id;
   const person = id === 'me' ? state.me : state.people.find((p) => p.id === id);
   if (!person) return;
-  if (btn.dataset.action === 'remove') {
+  if (btn.dataset.action === 'copy') {
+    copyWithFeedback(btn, timesText([person, state.me], 'Lesson time:', 'Current time:'));
+  } else if (btn.dataset.action === 'remove') {
     if (confirm(`Remove ${person.name}?`)) {
       state.people = state.people.filter((p) => p.id !== id);
       save();
@@ -481,27 +484,35 @@ $('share').addEventListener('click', async () => {
 });
 
 /** Plain-text list of everyone's local time, for pasting into a chat or email. */
-function timesText() {
+function timesText(people, lessonHead, nowHead) {
   const t = now();
   const line = (p) => {
     const where = p.place || zoneLabel(p.tz) || formatOffset(offsetMinutes(t, p.tz));
     return `• ${p.name} (${where}): ${fmtTime(t, p.tz)}, ${fmtDate(t, p.tz)}`;
   };
-  const head = ref == null ? 'Current time for everyone:' : 'Lesson time for everyone:';
-  return [head, line(state.me), ...sortedPeople(t).map(line)].join('\n');
+  return [ref == null ? nowHead : lessonHead, ...people.map(line)].join('\n');
 }
 
-let copyTimer = 0;
-$('copy-times').addEventListener('click', async () => {
-  const text = timesText();
-  const btn = $('copy-times');
-  if (await copyText(text)) {
-    btn.textContent = '✓ Copied';
-    clearTimeout(copyTimer);
-    copyTimer = setTimeout(() => { btn.textContent = '📋 Copy times'; }, 2000);
-  } else {
+/** Copy text and briefly show "✓ Copied" on the button; show the text if copying is blocked. */
+async function copyWithFeedback(btn, text) {
+  if (!(await copyText(text))) {
     alert(text);
+    return;
   }
+  const label = btn.dataset.label ?? btn.textContent;
+  btn.dataset.label = label;
+  btn.textContent = '✓ Copied';
+  clearTimeout(+btn.dataset.timer);
+  btn.dataset.timer = setTimeout(() => {
+    btn.textContent = label;
+    delete btn.dataset.label;
+  }, 2000);
+}
+
+$('copy-times').addEventListener('click', () => {
+  const t = now();
+  copyWithFeedback($('copy-times'), timesText([state.me, ...sortedPeople(t)],
+    'Lesson time for everyone:', 'Current time for everyone:'));
 });
 
 $('export').addEventListener('click', () => {
